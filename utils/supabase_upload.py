@@ -1,7 +1,7 @@
 import os
 from supabase import create_client
 
-def upload_clip_to_supabase(binary_data, original_url, user_id, index):
+def upload_clip_to_supabase(binary_data, url_video, user_id, index):
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_KEY")
     bucket = os.environ.get("BUCKET_NAME", "videospodcast")
