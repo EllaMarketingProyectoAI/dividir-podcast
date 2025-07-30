@@ -1,29 +1,19 @@
 import os
 from supabase import create_client
 
-def upload_clip_to_supabase(binary_data, url_video, user_id, index):
-    supabase_url = os.environ.get("SUPABASE_URL")
-    supabase_key = os.environ.get("SUPABASE_KEY")
-    bucket = os.environ.get("BUCKET_NAME", "videospodcast")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-    if not supabase_url or not supabase_key:
+def upload_clip_to_supabase(local_path, bucket_name, supabase_path):
+    if not SUPABASE_URL or not SUPABASE_KEY:
         raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set")
 
-    # Obtener nombre base del archivo original sin extensión
-    original_filename = url_video.split("/")[-1].split(".mp4")[0]
-    
-    # Crear nuevo nombre con sufijo "_parteX"
-    new_filename = f"{original_filename}_parte{index}.mp4"
-    
-    # Ruta destino final dentro del bucket
-    storage_path = f"PodcastCortados/{user_id}/{new_filename}"
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    # Inicializar cliente Supabase
-    supabase = create_client(supabase_url, supabase_key)
+    with open(local_path, "rb") as f:
+        data = f.read()
 
-    # Subir el archivo binario
-    supabase.storage.from_(bucket).upload(storage_path, binary_data, file_options={"content-type": "video/mp4"})
-
-    # Construir URL pública
-    public_url = f"{supabase_url}/storage/v1/object/public/{bucket}/{storage_path}"
-    return public_url
+    supabase.storage.from_(bucket_name).upload(supabase_path, data, {
+        "content-type": "video/mp4",
+        "x-upsert": "true"
+    })
