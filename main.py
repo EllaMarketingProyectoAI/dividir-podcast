@@ -14,7 +14,7 @@ app = Flask(__name__)
 @app.route("/", methods=["POST"])
 def dividir_video():
     try:
-        data = request.get_json()
+        data = request.get_json(force = True)
         video_url = data["video_url"]
         supabaseFileName = data["supabaseFileName"]
         userId = data["userId"]
