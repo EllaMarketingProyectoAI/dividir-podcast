@@ -7,6 +7,10 @@ import uuid
 
 app = Flask(__name__)
 
+@app.route('/')
+def index():
+    return 'Servidor Flask corriendo en Railway'
+
 @app.route("/procesar", methods=["POST"])
 def procesar():
     data = request.json
