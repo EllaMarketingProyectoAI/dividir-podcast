@@ -1,42 +1,69 @@
-from flask import Flask, request, jsonify
-from utils.ffmpeg_split import split_video_into_clips
-from utils.supabase_upload import upload_clip_to_supabase
 import os
+import json
 import requests
-import uuid
+import subprocess
+from flask import Flask, request, jsonify
+from utils.supabase_upload import upload_clip_to_supabase
+
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+BUCKET_NAME = "videospodcast"
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return 'Servidor Flask corriendo en Railway'
+@app.route("/", methods=["POST"])
+def dividir_video():
+    try:
+        data = request.get_json()
+        video_url = data["video_url"]
+        supabaseFileName = data["supabaseFileName"]
+        userId = data["userId"]
 
-@app.route("/procesar", methods=["POST"])
-def procesar():
-    data = request.json
+        input_filename = "input_video.mp4"
+        output_folder = "clipped"
+        os.makedirs(output_folder, exist_ok=True)
 
-    if data is None:
-        return jsonify({"error": "Request must contain JSON data"}), 400
+        # Descargar video original
+        with open(input_filename, "wb") as f:
+            response = requests.get(video_url)
+            f.write(response.content)
 
-    url_video = data.get("url_video")
-    user_id = data.get("user_id")
+        # Calcular duración total con FFmpeg
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", input_filename],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        duration = float(result.stdout.strip())
+        total_parts = int(duration // 600) + (1 if duration % 600 > 0 else 0)
 
-    if not url_video or not user_id:
-        return jsonify({"error": "Faltan datos"}), 400
+        output_files = []
+        for i in range(total_parts):
+            start_time = i * 600
+            output_filename = f"{output_folder}/part_{i+1}.mp4"
 
-    # Ejecutar función de división de video
-    output_urls = split_video_into_clips(binary_data, url_video, user_id, index)
-    
-    for i, clip_path in enumerate(clips):
-    with open(clip_path, "rb") as f:
-        binary_data = f.read()
-    url = upload_clip_to_supabase(binary_data, url_video, user_id, i+1)
-    output_urls.append(url)
+            subprocess.run([
+                "ffmpeg", "-i", input_filename,
+                "-ss", str(start_time), "-t", "600",
+                "-c:v", "libx264", "-c:a", "aac",
+                "-strict", "experimental", output_filename
+            ], check=True)
 
-    return jsonify({
-        "message": "Procesamiento exitoso",
-        "urls": output_urls
-    })
+            # Generar nombre dinámico final
+            supabase_path = f"PodcastCortados/{userId}_{supabaseFileName}_parte{i+1}.mp4"
+            upload_clip_to_supabase(output_filename, BUCKET_NAME, supabase_path)
+
+            output_files.append({
+                "parte": i+1,
+                "supabase_path": f"{BUCKET_NAME}/{supabase_path}"
+            })
+
+        return jsonify({"message": "Video dividido y subido correctamente", "clips": output_files})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
+    app.run(debug=True)
