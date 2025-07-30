@@ -25,7 +25,7 @@ def procesar():
         return jsonify({"error": "Faltan datos"}), 400
 
     # Ejecutar función de división de video
-    output_urls = split_video_into_clips(url_video, user_id)
+    output_urls = split_video_into_clips(binary_data, url_video, user_id, index)
 
     return jsonify({
         "message": "Procesamiento exitoso",
