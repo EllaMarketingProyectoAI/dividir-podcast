@@ -26,6 +26,12 @@ def procesar():
 
     # Ejecutar función de división de video
     output_urls = split_video_into_clips(binary_data, url_video, user_id, index)
+    
+    for i, clip_path in enumerate(clips):
+    with open(clip_path, "rb") as f:
+        binary_data = f.read()
+    url = upload_clip_to_supabase(binary_data, url_video, user_id, i+1)
+    output_urls.append(url)
 
     return jsonify({
         "message": "Procesamiento exitoso",
