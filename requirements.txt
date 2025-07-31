@@ -1,6 +1,6 @@
 Flask
+moviepy==1.0.3
 requests
 python-dotenv
-moviepy
 supabase
 gunicorn
