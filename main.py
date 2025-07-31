@@ -58,7 +58,8 @@ def dividir_podcast():
             clip = video.subclip(start, end)
             clip_filename = f"{uuid.uuid4()}_clip_{i+1}.mp4"
             clip_path = os.path.join(output_dir, clip_filename)
-            clip.write_videofile(clip_path, codec="libx264", audio_codec="aac")
+            clip.write_videofile(output_path, codec="libx264", audio_codec="aac", threads=1, preset="ultrafast")
+
 
             # Subir a Supabase
             with open(clip_path, "rb") as f:
