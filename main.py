@@ -24,7 +24,7 @@ def dividir_podcast():
         video_url = data.get("url_video")
         supabase_file_name = data.get("supabaseFileName")
 
-        if not user_id or not video_url or not supabase_file_name:
+        if not user_id or not url_video or not supabase_file_name:
             return jsonify({"status": "error", "message": "Missing required fields"}), 400
 
         print(f"🎥 URL: {url_video}")
