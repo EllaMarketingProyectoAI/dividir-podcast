@@ -21,7 +21,7 @@ def dividir_podcast():
     try:
         data = request.get_json(force=True)
         user_id = data.get("user_id")
-        video_url = data.get("url_video")
+        url_video = data.get("url_video")
         supabase_file_name = data.get("supabaseFileName")
 
         if not user_id or not url_video or not supabase_file_name:
