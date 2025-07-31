@@ -1,70 +1,85 @@
-import os
-import json
-import requests
-import subprocess
 from flask import Flask, request, jsonify
-from utils.supabase_upload import upload_clip_to_supabase
+import requests
+import os
+import uuid
+from moviepy.video.io.VideoFileClip import VideoFileClip
+from supabase import create_client, Client
+from dotenv import load_dotenv
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-BUCKET_NAME = "videospodcast"
+load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
 
 @app.route("/", methods=["POST"])
-def dividir_video():
+def dividir_podcast():
     try:
-        data = request.get_json(force = True)
-        
-         user_id = data.get("userId")
+        data = request.get_json(force=True)
+        user_id = data.get("userId")
         video_url = data.get("video_url")
         supabase_file_name = data.get("supabaseFileName")
-      
-        input_filename = "input_video.mp4"
-        output_folder = "clipped"
-        os.makedirs(output_folder, exist_ok=True)
 
-        # Descargar video original
-        with open(input_filename, "wb") as f:
-            response = requests.get(video_url)
+        if not user_id or not video_url or not supabase_file_name:
+            return jsonify({"status": "error", "message": "Missing required fields"}), 400
+
+        print(f"🎥 URL: {video_url}")
+        print(f"👤 User ID: {user_id}")
+        print(f"🗂️ Archivo: {supabase_file_name}")
+
+        # Crear carpeta temporal
+        os.makedirs("temp", exist_ok=True)
+        video_path = os.path.join("temp", supabase_file_name)
+
+        # Descargar video
+        response = requests.get(video_url)
+        with open(video_path, "wb") as f:
             f.write(response.content)
 
-        # Calcular duración total con FFmpeg
-        result = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-             "-of", "default=noprint_wrappers=1:nokey=1", input_filename],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        duration = float(result.stdout.strip())
-        total_parts = int(duration // 600) + (1 if duration % 600 > 0 else 0)
+        # Dividir video
+        clip = VideoFileClip(video_path)
+        duration = int(clip.duration)
+        segment_duration = 600  # 10 minutos = 600 segundos
 
-        output_files = []
-        for i in range(total_parts):
-            start_time = i * 600
-            output_filename = f"{output_folder}/part_{i+1}.mp4"
+        folder_output = "temp/output"
+        os.makedirs(folder_output, exist_ok=True)
 
-            subprocess.run([
-                "ffmpeg", "-i", input_filename,
-                "-ss", str(start_time), "-t", "600",
-                "-c:v", "libx264", "-c:a", "aac",
-                "-strict", "experimental", output_filename
-            ], check=True)
+        clip_urls = []
 
-            # Generar nombre dinámico final
-            supabase_path = f"PodcastCortados/{userId}_{supabaseFileName}_parte{i+1}.mp4"
-            upload_clip_to_supabase(output_filename, BUCKET_NAME, supabase_path)
+        for i in range(0, duration, segment_duration):
+            subclip = clip.subclip(i, min(i + segment_duration, duration))
+            output_filename = f"{user_id}_clip_{i//segment_duration + 1}.mp4"
+            output_path = os.path.join(folder_output, output_filename)
 
-            output_files.append({
-                "parte": i+1,
-                "supabase_path": f"{BUCKET_NAME}/{supabase_path}"
-            })
+            subclip.write_videofile(output_path, codec="libx264", audio_codec="aac")
 
-        return jsonify({"message": "Video dividido y subido correctamente", "clips": output_files})
+            # Subir a Supabase en la carpeta PodcastCortados
+            with open(output_path, "rb") as video_file:
+                supabase.storage.from_("ellaproyecto").upload(
+                    file=video_file,
+                    path=f"videospodcast/PodcastCortados/{output_filename}",
+                    file_options={"content-type": "video/mp4"},
+                    upsert=True
+                )
+
+            public_url = f"{SUPABASE_URL}/storage/v1/object/public/ellaproyecto/videospodcast/PodcastCortados/{output_filename}"
+            clip_urls.append(public_url)
+
+        # Limpieza
+        clip.close()
+
+        return jsonify({
+            "status": "success",
+            "total_clips": len(clip_urls),
+            "clips": clip_urls
+        })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"❌ Error interno: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
