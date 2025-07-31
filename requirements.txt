@@ -1,6 +1,6 @@
 flask
+moviepy
+supabase
 requests
 python-dotenv
-supabase
-moviepy
 ffmpeg-python
