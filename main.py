@@ -27,8 +27,8 @@ def dividir_podcast():
         if not user_id or not url_video or not supabase_file_name:
             return jsonify({"status": "error", "message": "Missing required fields"}), 400
 
-        print(f"🎥 URL: {url_video}")
         print(f"👤 User ID: {user_id}")
+        print(f"🎥 URL: {url_video}")
         print(f"🗂️ Archivo: {supabase_file_name}")
 
         # Crear carpeta temporal
