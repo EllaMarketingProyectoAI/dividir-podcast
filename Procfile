@@ -1,3 +1,3 @@
 web: python main.py
-web_ python supabase_upload.py
+web: python supabase_upload.py
 
