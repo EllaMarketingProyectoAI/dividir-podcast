@@ -2,16 +2,17 @@ from flask import Flask, request, jsonify
 import requests
 import os
 import uuid
-from moviepy.video.io.VideoFileClip import VideoFileClip
-from supabase import create_client, Client
+from moviepy.editor import VideoFileClip
+from supabase import create_client
 from dotenv import load_dotenv
 
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+BUCKET_NAME = os.getenv("BUCKET_NAME")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
 
