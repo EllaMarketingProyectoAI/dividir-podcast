@@ -1,6 +1,6 @@
 Flask
-moviepy
 requests
 python-dotenv
+moviepy
 supabase
 gunicorn
