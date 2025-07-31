@@ -15,10 +15,25 @@ app = Flask(__name__)
 def dividir_video():
     try:
         data = request.get_json(force = True)
-        video_url = data["video_url"]
-        supabaseFileName = data["supabaseFileName"]
-        userId = data["userId"]
+        
+         user_id = data.get("userId")
+        video_url = data.get("video_url")
+        supabase_file_name = data.get("supabaseFileName")
+        print(f"📥 user_id: {user_id}")
+        print(f"🎥 video_url: {video_url}")
+        print(f"📁 file name: {supabase_file_name}")w
+        # Aquí iría tu lógica real de división...
+        return jsonify({
+            "status": "ok",
+            "user_id": user_id,
+            "video_url": video_url,
+            "file": supabase_file_name
+        })
 
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+      
         input_filename = "input_video.mp4"
         output_folder = "clipped"
         os.makedirs(output_folder, exist_ok=True)
