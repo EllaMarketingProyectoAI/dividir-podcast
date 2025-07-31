@@ -20,14 +20,14 @@ app = Flask(__name__)
 def dividir_podcast():
     try:
         data = request.get_json(force=True)
-        user_id = data.get("userId")
-        video_url = data.get("video_url")
+        user_id = data.get("user_id")
+        video_url = data.get("url_video")
         supabase_file_name = data.get("supabaseFileName")
 
         if not user_id or not video_url or not supabase_file_name:
             return jsonify({"status": "error", "message": "Missing required fields"}), 400
 
-        print(f"🎥 URL: {video_url}")
+        print(f"🎥 URL: {url_video}")
         print(f"👤 User ID: {user_id}")
         print(f"🗂️ Archivo: {supabase_file_name}")
 
@@ -36,7 +36,7 @@ def dividir_podcast():
         video_path = os.path.join("temp", supabase_file_name)
 
         # Descargar video
-        response = requests.get(video_url)
+        response = requests.get(url_video)
         with open(video_path, "wb") as f:
             f.write(response.content)
 
