@@ -1,19 +1,22 @@
 import os
 from supabase import create_client
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+BUCKET = "videospodcast"
 
-def upload_clip_to_supabase(local_path, bucket_name, supabase_path):
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-    with open(local_path, "rb") as f:
-        data = f.read()
-
-    supabase.storage.from_(bucket_name).upload(supabase_path, data, {
-        "content-type": "video/mp4",
-        "x-upsert": "true"
-    })
+def upload_to_supabase(file_paths, folder, mime_type):
+    urls = []
+    for path in file_paths:
+        file_name = os.path.basename(path)
+        storage_path = f"{folder}/{file_name}"
+        with open(path, "rb") as f:
+            supabase.storage.from_(BUCKET).upload(
+                storage_path, f,
+                {"content-type": mime_type, "x-upsert": "true"}
+            )
+            public_url = f"{SUPABASE_URL}/storage/v1/object/public/{BUCKET}/{storage_path}"
+            urls.append(public_url)
+    return urls
