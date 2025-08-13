@@ -1,10 +1,17 @@
-# Dividir Podcast Pesado (Railway-ready)
+# FFmpeg Merge Service (Railway + Supabase)
 
-Este servidor Flask permite dividir videos grandes (como podcasts) en segmentos de 10 minutos y subirlos a Supabase.
+Servicio Flask para **concatenar videos** con FFmpeg y **subir resultado a Supabase Storage**.
 
-## 🧪 Ejemplo de JSON para POST:
-{
-"user_id": "4c3d3286-71e4-4a7f-90c0-3ad213a447fa",
-"url_video": "https://yknjfeqpunebqtmpdtjj.supabase.co/storage/v1/object/public/videospodcast/PodcastCompleto/4c3d3286-71e4-4a7f-90c0-3ad213a447fa_Rick_Astley_-_Never_Gonna_Give_You_Up__Official_Video___4K_Remaster__-_Rick_Astley__720p__h264_.mp4",
-"supabaseFileName": "4c3d3286-71e4-4a7f-90c0-3ad213a447fa_Rick_Astley_-_Never_Gonna_Give_You_Up__Official_Video___4K_Remaster__-_Rick_Astley__720p__h264_.mp4"
-}
+## Endpoints
+
+- `GET /health` → `{ "ok": true }`
+- `POST /concat`  
+  **Body (JSON):**
+  ```json
+  {
+    "clips": ["https://.../clip_01.mp4", "https://.../clip_02.mp4"],
+    "output": "final_video.mp4",
+    "reencode": true,
+    "destPrefix": "VideosFinales/",
+    "upload": true
+  }
