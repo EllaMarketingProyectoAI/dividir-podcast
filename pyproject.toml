@@ -1,7 +1,6 @@
 [project]
-name = "DividirPodcast"
+name = "UnirVideos"
 version = "0.1.0"
-description = ""
 authors = ["Rodrigo Meléndez <rodmlndz.com>"]
 requires-python = ">=3.11"
 dependencies = [
