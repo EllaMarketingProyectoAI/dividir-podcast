@@ -147,6 +147,7 @@ def health():
 
 @app.post("/concat")
 def concat():
+    log.info(f"ENV check: URL set={bool(SUPABASE_URL)}, SR set={bool(SUPABASE_SERVICE_ROLE)}")
     try:
         data = request.get_json(force=True, silent=False)
         if not data or "clips" not in data or not isinstance(data["clips"], list) or len(data["clips"]) < 1:
